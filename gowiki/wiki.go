@@ -42,9 +42,11 @@ func (p *page) load() (*page, error) {
 }
 
 func main() {
-	p1 := &page{title: "test", body: []byte("this is a test page")}
+	p1 := &page{title: "test", body: []byte("this is a test page, loaded using a method")}
 	p1.save()
-	p2, err := loadPage(p1.title)
+
+	//p2, err := loadPage(p1.title)
+	p2, err := p1.load()
 	if err != nil {
 		log.Fatalln(err)
 	}
