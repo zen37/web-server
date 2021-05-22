@@ -1,6 +1,10 @@
 package main
 
-import "io/ioutil"
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+)
 
 //describes how the wiki page will be stored in memory
 type page struct {
@@ -11,7 +15,7 @@ type page struct {
 /*
 save method that takes as its receiver a pointer to page
 it returns an error value because that is the return type of WriteFile
-if there is no error it returns nil, the zero-value for pointers, interfaces, and some other types
+if there is no error it returns nil (the zero-value for pointers, interfaces, and some other types)
 octal integer literal 0600, indicates that the file should be created with read-write permissions for the current user only.
 */
 func (p *page) save() error {
@@ -19,6 +23,30 @@ func (p *page) save() error {
 	return ioutil.WriteFile(f, p.body, 0600)
 }
 
-func main() {
+func loadPage(title string) (*page, error) {
+	f := title + ".txt"
+	body, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil, err
+	}
+	return &page{title: title, body: body}, nil
+}
 
+func (p *page) load() (*page, error) {
+	f := p.title + ".txt"
+	body, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil, err
+	}
+	return &page{title: p.title, body: body}, nil
+}
+
+func main() {
+	p1 := &page{title: "test", body: []byte("this is a test page")}
+	p1.save()
+	p2, err := loadPage(p1.title)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(string(p2.body))
 }
