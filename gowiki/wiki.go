@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 )
 
 //describes how the wiki page will be stored in memory
@@ -23,6 +24,7 @@ func (p *page) save() error {
 	return ioutil.WriteFile(f, p.body, 0600)
 }
 
+// why not a method? tutorial has a function - May 22
 func loadPage(title string) (*page, error) {
 	f := title + ".txt"
 	body, err := ioutil.ReadFile(f)
@@ -32,6 +34,7 @@ func loadPage(title string) (*page, error) {
 	return &page{title: title, body: body}, nil
 }
 
+// load method not in the tutorial - May 22
 func (p *page) load() (*page, error) {
 	f := p.title + ".txt"
 	body, err := ioutil.ReadFile(f)
@@ -39,10 +42,28 @@ func (p *page) load() (*page, error) {
 		return nil, err
 	}
 	return &page{title: p.title, body: body}, nil
+
+}
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+		var p1 page
+		p1.title = r.URL.Path[len("/view/"):]
+		p, err := p1.load()
+	*/
+
+	t := r.URL.Path[len("/view/"):]
+	p, err := loadPage(t)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//fmt.Fprintln(w, string(p2.body))
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.title, p.body)
+
 }
 
 func main() {
-	p1 := &page{title: "test", body: []byte("this is a test page, loaded using a method")}
+
+	p1 := &page{title: "test", body: []byte("this is a test page")}
 	p1.save()
 
 	//p2, err := loadPage(p1.title)
@@ -51,4 +72,8 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Println(string(p2.body))
+
+	http.HandleFunc("/view/", viewHandler)
+
+	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
