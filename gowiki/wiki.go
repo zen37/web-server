@@ -61,6 +61,30 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//The function editHandler loads the page
+//(or, if it doesn't exist, create an empty Page struct), and displays an HTML form.
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	t := r.URL.Path[len("/edit/"):]
+	p1 := &page{title: t}
+	p2, err := p1.load()
+	if err != nil {
+		fmt.Fprintf(w, "<h1>editing %s</h1>"+
+			"<form action=\"/save/%s\" method=\"POST\">"+
+			"<textarea name=\"body\">%s</textarea><br>"+
+			"<input type=\"submit\" value=\"Save\">"+
+			"</form>",
+			p1.title, p1.title, p1.body)
+	} else {
+		fmt.Fprintf(w, "<h1>editing %s</h1>"+
+			"<form action=\"/save/%s\" method=\"POST\">"+
+			"<textarea name=\"body\">%s</textarea><br>"+
+			"<input type=\"submit\" value=\"Save\">"+
+			"</form>",
+			p2.title, p2.title, p2.body)
+	}
+
+}
+
 func main() {
 
 	p1 := &page{title: "test", body: []byte("this is a test page")}
@@ -74,6 +98,7 @@ func main() {
 	fmt.Println(string(p2.body))
 
 	http.HandleFunc("/view/", viewHandler)
+	http.HandleFunc("/edit/", editHandler)
 
 	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
