@@ -63,10 +63,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 //The function editHandler loads the page
 //(or, if it doesn't exist, create an empty Page struct), and displays an HTML form.
-func editHandler(w http.ResponseWriter, r *http.Request) {
-	t := r.URL.Path[len("/edit/"):]
+func editHandler1(w http.ResponseWriter, r *http.Request) {
+	t := r.URL.Path[len("/edit1/"):]
 	p1 := &page{title: t}
 	p2, err := p1.load()
+
 	if err != nil {
 		fmt.Fprintf(w, "<h1>editing %s</h1>"+
 			"<form action=\"/save/%s\" method=\"POST\">"+
@@ -82,7 +83,24 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			"</form>",
 			p2.title, p2.title, p2.body)
 	}
+	fmt.Fprintf(w, "<h6>func (p *page) load() (*page, error) has been used</h6>")
+}
 
+func editHandler2(w http.ResponseWriter, r *http.Request) {
+
+	t := r.URL.Path[len("/edit2/"):]
+	p, err := loadPage(t)
+	if err != nil {
+		p = &page{title: t}
+	}
+
+	fmt.Fprintf(w, "<h1>editing %s</h1>"+
+		"<form action=\"/save/%s\" method=\"POST\">"+
+		"<textarea name=\"body\">%s</textarea><br>"+
+		"<input type=\"submit\" value=\"Save\">"+
+		"</form>",
+		p.title, p.title, p.body)
+	fmt.Fprintf(w, "<h6>func loadPage(title string) (*page, error) has been used</h6>")
 }
 
 func main() {
@@ -98,7 +116,8 @@ func main() {
 	fmt.Println(string(p2.body))
 
 	http.HandleFunc("/view/", viewHandler)
-	http.HandleFunc("/edit/", editHandler)
+	http.HandleFunc("/edit1/", editHandler1)
+	http.HandleFunc("/edit2/", editHandler2)
 
 	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
