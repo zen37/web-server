@@ -55,7 +55,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	t := r.URL.Path[len("/view/"):]
 	p, err := loadPage(t)
 	if err != nil {
-		log.Fatalln(err)
+		// if the page doesn't exist the client is redirected to the edit Page so the content may be created
+		http.Redirect(w, r, "/edit2/"+t, http.StatusFound)
+		//The http.Redirect function adds an HTTP status code of http.StatusFound (302)
+		//and a Location header to the HTTP response.
+		return
 	}
 	// fmt.Fprintln(w, string(p2.Body))
 	// fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
