@@ -57,13 +57,15 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//fmt.Fprintln(w, string(p2.Body))
-	//fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
-	templ, err := template.ParseFiles("view.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	templ.Execute(w, p)
+	// fmt.Fprintln(w, string(p2.Body))
+	// fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+	// templ, err := template.ParseFiles("view.html")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// templ.Execute(w, p)
+
+	renderTemplate(w, p, "view")
 }
 
 //The function editHandler* loads the page
@@ -103,19 +105,22 @@ func editHandler2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// will read the contents of edit.html and return a *template.Template.
-	templ, _ := template.ParseFiles("edit.html")
+	// templ, _ := template.ParseFiles("edit.html")
 	// executes the template, writing the generated HTML to the http.ResponseWriter
-	templ.Execute(w, p)
+	// templ.Execute(w, p)
 
 	//fmt.Fprintf(w, "<h6>func loadPage(Title string) (*page, error) has been used</h6>")
+	renderTemplate(w, p, "edit")
 }
 
-func renderTemplate(w http.ResponseWriter, p *page, action string) {
-	// 	f := "action" + ".html"
-	// 	t, err := template.ParseFiles(f)
-	// 	iferr
-	// }
+func renderTemplate(w http.ResponseWriter, p *page, tmpl string) {
+	t, err := template.ParseFiles(tmpl + ".html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Execute(w, p)
 }
+
 func main() {
 
 	p1 := &page{Title: "test", Body: []byte("this is a test page")}
