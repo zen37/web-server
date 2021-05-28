@@ -125,6 +125,24 @@ func renderTemplate(w http.ResponseWriter, p *page, tmpl string) {
 	t.Execute(w, p)
 }
 
+//will handle the submission of the form located in the edit page
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+
+	//the title, provided in the URL, and teh form's obly field are stored in a new page
+	t := r.URL.Path[len("/save/"):]
+	b := r.FormValue("body") //returns string, that needs to be converted to []byte for page struct
+	p := &page{Title: t, Body: []byte(b)}
+	//saves data to a file
+	err := p.save()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	//client is redirected
+	http.Redirect(w, r, "/view/"+t, http.StatusFound)
+
+}
+
 func main() {
 
 	p1 := &page{Title: "test", Body: []byte("this is a test page")}
@@ -140,6 +158,6 @@ func main() {
 	http.HandleFunc("/view/", viewHandler)
 	http.HandleFunc("/edit1/", editHandler1)
 	http.HandleFunc("/edit2/", editHandler2)
-
+	http.HandleFunc("/save/", saveHandler)
 	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
