@@ -122,7 +122,10 @@ func renderTemplate(w http.ResponseWriter, p *page, tmpl string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.Execute(w, p)
+	err = t.Execute(w, p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 //will handle the submission of the form located in the edit page
