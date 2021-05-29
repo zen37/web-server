@@ -8,6 +8,21 @@ import (
 	"text/template"
 )
 
+const (
+	c_edit string = "edit.html"
+	c_view string = "view.html"
+)
+
+/*
+The function template.Must is a convenience wrapper that panics when passed a non-nil error value,
+and otherwise returns the *Template unaltered. A panic is appropriate here;
+if the templates can't be loaded the only sensible thing to do is exit the program.
+
+The ParseFiles function takes any number of string arguments that identify our template files,
+and parses those files into templates that are named after the base file name.
+*/
+var templates = template.Must(template.ParseFiles(c_edit, c_view))
+
 //describes how the wiki page will be stored in memory
 type page struct {
 	Title string
@@ -117,15 +132,29 @@ func editHandler2(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, p, "edit")
 }
 
+/*
+There is an inefficiency in this code: renderTemplate calls ParseFiles every time a page is rendered.nb
+A better approach would be to call ParseFiles once at program initialization,
+parsing all templates into a single *Template.
+Then we can use the ExecuteTemplate method to render a specific template.
+*/
 func renderTemplate(w http.ResponseWriter, p *page, tmpl string) {
-	t, err := template.ParseFiles(tmpl + ".html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = t.Execute(w, p)
+
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	/*
+		t, err := template.ParseFiles(tmpl + ".html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = t.Execute(w, p)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	*/
 }
 
 //will handle the submission of the form located in the edit page
