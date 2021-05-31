@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"text/template"
 )
 
@@ -12,6 +15,12 @@ const (
 	c_edit string = "edit.html"
 	c_view string = "view.html"
 )
+
+//describes how the wiki page will be stored in memory
+type page struct {
+	Title string
+	Body  []byte // byte slice rather than string as this is the type expected by the io libraries
+}
 
 /*
 The function template.Must is a convenience wrapper that panics when passed a non-nil error value,
@@ -23,10 +32,27 @@ and parses those files into templates that are named after the base file name.
 */
 var templates = template.Must(template.ParseFiles(c_edit, c_view))
 
-//describes how the wiki page will be stored in memory
-type page struct {
-	Title string
-	Body  []byte // byte slice rather than string as this is the type expected by the io libraries
+/*
+The function regexp.MustCompile will parse and compile the regular expression, and return a regexp.Regexp.
+MustCompile is distinct from Compile in that it will panic if the expression compilation fails,
+while Compile returns an error as a second parameter.
+*/
+var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+
+func getPageTitle(w http.ResponseWriter, r *http.Request) (string, error) {
+	//fmt.Println("r.URL.Path = ", r.URL.Path)
+
+	m := validPath.FindStringSubmatch(r.URL.Path)
+	//fmt.Println("m = ", m)
+	if m == nil {
+		res := strings.Split(r.URL.Path, "/")
+		t := res[len(res)-1]
+		w.Write([]byte(t + " is an invalid Page Title"))
+		//	http.NotFound(w, r)
+		return "", errors.New(t + " is an invalid Page Title")
+	}
+
+	return m[2], nil //title is in second subexpression
 }
 
 /*
@@ -66,12 +92,17 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		p1.Title = r.URL.Path[len("/view/"):]
 		p, err := p1.load()
 	*/
-
-	t := r.URL.Path[len("/view/"):]
+	//t := r.URL.Path[len("/view/"):]
+	t, err := getPageTitle(w, r)
+	if err != nil {
+		fmt.Println(err)
+		//	w.Write([]byte(err.Error()))
+		return
+	}
 	p, err := loadPage(t)
 	if err != nil {
 		// if the page doesn't exist the client is redirected to the edit Page so the content may be created
-		http.Redirect(w, r, "/edit2/"+t, http.StatusFound)
+		http.Redirect(w, r, "/edit/"+t, http.StatusFound)
 		//The http.Redirect function adds an HTTP status code of http.StatusFound (302)
 		//and a Location header to the HTTP response.
 		return
@@ -90,7 +121,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 //The function editHandler* loads the page
 //(or, if it doesn't exist, create an empty Page struct), and displays an HTML form.
 
-//uses a method to load the page
+//method to load the page
 func editHandler1(w http.ResponseWriter, r *http.Request) {
 	t := r.URL.Path[len("/edit1/"):]
 	p1 := &page{Title: t}
@@ -117,7 +148,15 @@ func editHandler1(w http.ResponseWriter, r *http.Request) {
 //uses a function to load the page
 func editHandler2(w http.ResponseWriter, r *http.Request) {
 
-	t := r.URL.Path[len("/edit2/"):]
+	//t := r.URL.Path[len("/edit/"):]
+
+	t, err := getPageTitle(w, r)
+	if err != nil {
+		fmt.Println(err)
+		//	w.Write([]byte(err.Error()))
+		return
+	}
+
 	p, err := loadPage(t)
 	if err != nil {
 		p = &page{Title: t}
@@ -160,12 +199,16 @@ func renderTemplate(w http.ResponseWriter, p *page, tmpl string) {
 //will handle the submission of the form located in the edit page
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 
-	//the title, provided in the URL, and teh form's obly field are stored in a new page
-	t := r.URL.Path[len("/save/"):]
+	t, err := getPageTitle(w, r)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	b := r.FormValue("body") //returns string, that needs to be converted to []byte for page struct
 	p := &page{Title: t, Body: []byte(b)}
 	//saves data to a file
-	err := p.save()
+	err = p.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -189,7 +232,8 @@ func main() {
 
 	http.HandleFunc("/view/", viewHandler)
 	http.HandleFunc("/edit1/", editHandler1)
-	http.HandleFunc("/edit2/", editHandler2)
+	http.HandleFunc("/edit/", editHandler2)
 	http.HandleFunc("/save/", saveHandler)
+	fmt.Println("Listening on port 8080")
 	log.Fatalln(http.ListenAndServe(":8080", nil))
 }

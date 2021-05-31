@@ -4,3 +4,4 @@ https://golang.org/doc/articles/wiki/
 2. use the net/http package to build web applications
 3. use the html/template package to process HTML templates
 4. template caching
+5. validation
