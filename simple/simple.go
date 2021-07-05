@@ -25,6 +25,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	//tells the http package to handle all requests to the web root ("/") with handler.
 	http.HandleFunc("/", handler)
 
